@@ -1,0 +1,108 @@
+# Tomcat
+server:
+  port: 80
+
+# Spring
+spring:
+  application:
+    # 应用名称
+    name: gateway-service
+  profiles:
+    # 环境配置
+    active: dev
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    password: 123456
+    jedis:
+      poll:
+        max-active: 8
+        max-wait: -1
+        max-idle: 8
+  main:
+    allow-bean-definition-overriding: true
+  cloud:
+    nacos:
+      discovery:
+        # 服务注册地址
+        server-addr: 127.0.0.1:8848
+      config:
+        # 配置中心地址
+        server-addr: 127.0.0.1:8848
+        # 配置文件格式
+        file-extension: yml
+        # 共享配置
+          #shared-configs:
+        #  - application-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
+
+    sentinel:
+      # 取消控制台懒加载
+      eager: true
+      transport:
+        # sentinel控制台地址
+        dashboard: 127.0.0.1:8080
+      # nacos配置持久化
+        #datasource:
+          #ds1:
+          #nacos:
+            # nacos地址
+          #server-addr: 192.168.1.0:8848
+          #dataId: sentinel-gateway
+          #groupId: DEFAULT_GROUP
+          #data-type: json
+        #rule-type: flow
+
+    gateway:
+      discovery:
+        locator:
+          lowerCaseServiceId: true
+          enabled: true
+      routes:
+        # 认证中心
+        - id: list #路由id,唯一
+          uri: lb://order-service #负载到consumer
+          predicates:
+            - Path=/order/** #以city开头的请求都负载到consumer服务
+
+
+        - id: product #路由id,唯一
+          uri: lb://product-service #负载到consumer
+          predicates:
+            - Path=/product/** #以city开头的请求都负载到consumer服务
+
+
+        - id: login #路由id,唯一
+          uri: lb://auth-service #负载到consumer
+          predicates:
+            - Path=/auth/** #以city开头的请求都负载到consumer服务
+#          filters:
+#            - StripPrefix=1
+
+            #filters:
+           # - RewritePath=/order-api/(?<remaining>.*), /order/$\{remaining}
+            #- StripPrefix=0
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            # 允许携带认证信息
+            # 允许跨域的源(网站域名/ip)，设置*为全部
+            # 允许跨域请求里的head字段，设置*为全部
+            # 允许跨域的method， 默认为GET和OPTIONS，设置*为全部
+            # 跨域允许的有效期
+            allow-credentials: false
+            allowedOrigins: "*"
+            allowedHeaders: "*"
+            allowedMethods: "*"
+# 不校验白名单
+ignore:
+  whites:
+    - /logout
+    - /login
+    - /*/v2/api-docs
+    - /csrf
+    - /v3/api-docs
+#gateway-config:
+#  uriWhitelist:
+#    - /v3/api-docs
+swagger:
+  enable: true
